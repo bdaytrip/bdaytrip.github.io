@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B-Day Dream Trip Countdown</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --accent-color: #ffffff;
+            --progress-bg: #333333;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 4rem;
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-weight: 400;
+            font-size: 1.2rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin: 0 0 1rem 0;
+        }
+
+        h2 {
+            font-weight: 600;
+            font-size: 2.5rem;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-weight: 400;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+        
+        .subtitle span {
+            display: block;
+            margin-top: 0.3rem;
+        }
+
+        .timer-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .time-display {
+            font-family: 'Courier New', Courier, monospace;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .main-timer .time-display {
+            font-size: 3.5rem;
+            font-weight: 200;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+        }
+
+        .progress-container {
+            width: 100%;
+            margin-top: 2.7rem;
+            position: relative;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 4px;
+            background-color: var(--progress-bg);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent-color);
+            transition: width 0.5s ease;
+        }
+
+        .progress-percentage {
+            position: absolute;
+            top: -3.9rem;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-weight: 500;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .financial-display {
+            position: absolute;
+            top: -2.4rem;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .secondary-timers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .sub-timer .label {
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .sub-timer .time-display {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--text-primary);
+        }
+
+        .finished {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        @media (max-width: 600px) {
+            .main-timer .time-display { font-size: 2.5rem; }
+            .secondary-timers { grid-template-columns: 1fr; gap: 2rem; }
+            .financial-display { font-size: 0.8rem; }
+            .progress-percentage { font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="timer-block main-timer">
+            <h1>B-Day Dream Trip</h1>
+            <div id="main-countdown" class="time-display">Loading...</div>
+            <div class="subtitle">Disney · Orlando, FL · EUA<span>May 2026</span></div>
+        </div>
+
+        <div class="progress-container">
+            <div id="progress-percentage" class="progress-percentage">0.0%</div>
+            <div id="financial-counter" class="financial-display">R$ 0,00 / R$ 500.000,00</div>
+            
+            <div class="progress-bar-bg">
+                <div id="progress-fill" class="progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="secondary-timers">
+            <div class="timer-block sub-timer">
+                <span class="label">T-30 Milestone</span>
+                <div id="t30-countdown" class="time-display">Loading...</div>
+            </div>
+            
+            <div class="timer-block sub-timer">
+                <span class="label">T-60 Milestone</span>
+                <div id="t60-countdown" class="time-display">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dateMainStr = '2026-05-19T23:59:59';
+        const dateT30Str  = '2026-04-19T23:59:59';
+        const dateT60Str  = '2026-03-20T23:59:59';
+        const dateStartStr = '2026-01-04T00:00:00';
+
+        const dateMain = new Date(dateMainStr).getTime();
+        const dateT30 = new Date(dateT30Str).getTime();
+        const dateT60 = new Date(dateT60Str).getTime();
+        const dateStart = new Date(dateStartStr).getTime();
+
+        const targetAmount = 500000;
+
+        function updateTimer(elementId, targetDate) {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+            const element = document.getElementById(elementId);
+
+            if (distance < 0) {
+                element.innerHTML = '<span class="finished">The big day has arrived!</span>';
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            const d = String(days).padStart(3, '0');
+            const h = String(hours).padStart(2, '0');
+            const m = String(minutes).padStart(2, '0');
+            const s = String(seconds).padStart(2, '0');
+
+            element.innerText = `${d}d ${h}h ${m}m ${s}s`;
+        }
+
+        function updateHighFreqLoop() {
+            const now = Date.now();
+            const totalDuration = dateMain - dateStart;
+            const timeElapsed = now - dateStart;
+            
+            let ratio = 0;
+
+            if (totalDuration > 0) {
+                ratio = timeElapsed / totalDuration;
+            }
+
+            const safeRatio = Math.max(0, Math.min(1, ratio));
+            const percentage = safeRatio * 100;
+
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-percentage');
+            progressFill.style.width = `${percentage.toFixed(1)}%`;
+            progressText.innerText = `${percentage.toFixed(1)}%`;
+
+            const currentAmount = safeRatio * targetAmount;
+            
+            const formatter = new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2
+            });
+
+            const currentFormatted = formatter.format(currentAmount);
+            const targetFormatted = formatter.format(targetAmount);
+
+            document.getElementById('financial-counter').innerText = `${currentFormatted} / ${targetFormatted}`;
+
+            requestAnimationFrame(updateHighFreqLoop);
+        }
+
+        function updateClocks() {
+            updateTimer('main-countdown', dateMain);
+            updateTimer('t30-countdown', dateT30);
+            updateTimer('t60-countdown', dateT60);
+        }
+
+        function startSystem() {
+            updateClocks(); 
+            setInterval(updateClocks, 1000);
+            requestAnimationFrame(updateHighFreqLoop);
+        }
+
+        startSystem();
+    </script>
+</body>
+</html>
